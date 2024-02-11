@@ -1,0 +1,10 @@
+python-dotenv
+transformers
+torch 
+torchvision 
+torchaudio
+huggingface_hub
+langchain
+openai
+streamlit
+watchdog
