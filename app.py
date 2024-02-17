@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from transformers import pipeline
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
-from langchain_community.llms import OpenAI
+from langchain_openai import OpenAI
 
 
 def convert_img_text(url):
@@ -35,8 +35,8 @@ def generate_story(scenario):
         verbose=True,
     )
 
-    story = story_llm.run(scenario=scenario)
-    return story
+    story = story_llm.invoke(input=scenario)
+    return story["text"]
 
 
 def text_to_speech(text):
@@ -67,6 +67,24 @@ def autoplay_audio(file_path: str):
         )
 
 
+def translate_to_indic_per_line(story, language="ml"):
+    english_to_hindi = pipeline(
+        "translation", model=f"Helsinki-NLP/opus-mt-en-{language}"
+    )
+    output = english_to_hindi(story)
+    return output
+
+
+def translate_to_indic(story, language="ml"):
+    lines = story.split(".")[:-1]
+    translated_story = []
+    for line in lines:
+        output = translate_to_indic_per_line(line, language)
+        translated_story.append(output[0]["translation_text"])
+    story_in_indic = "".join(translated_story)
+    return story_in_indic
+
+
 def main():
     st.set_page_config(page_title="Using LLM", page_icon="🤖")
     st.header(
@@ -90,6 +108,14 @@ def main():
         with st.expander("Generated story"):
             story = generate_story(scenario)
             st.write(story)
+
+        with st.expander("Translate to Hindi"):
+            story_in_indic = translate_to_indic(story, language="hi")
+            st.write(story_in_indic)
+
+        with st.expander("Translate to Malayalam"):
+            story_in_indic = translate_to_indic(story, language="ml")
+            st.write(story_in_indic)
 
         st.write("Generating audio...")
 

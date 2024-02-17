@@ -1,10 +1,13 @@
 python-dotenv
 transformers
-torch 
-torchvision 
+torch
+torchvision
 torchaudio
 huggingface_hub
 langchain
+langchain-openai
 openai
+sacremoses
 streamlit
 watchdog
+sentencepiece
