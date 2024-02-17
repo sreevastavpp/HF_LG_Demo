@@ -7,6 +7,8 @@ from transformers import pipeline
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain_openai import OpenAI
+from diffusers import DiffusionPipeline
+from diffusers.utils import export_to_video
 
 
 def convert_img_text(url):
@@ -85,7 +87,25 @@ def translate_to_indic(story, language="ml"):
     return story_in_indic
 
 
+def generate_text_to_image(scenario):
+    TOKEN = os.getenv("HUGGINGFACEHUB_API_TOKEN")
+    API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0"
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+
+    def query(payload):
+        response = requests.post(API_URL, headers=headers, json=payload)
+        return response.content
+
+    image_bytes = query(
+        {
+            "inputs": scenario,
+        }
+    )
+    return image_bytes
+
+
 def main():
+    scenario = ""
     st.set_page_config(page_title="Using LLM", page_icon="🤖")
     st.header(
         "A Langchain example to convert image to text and generate a story and read it out loud"
@@ -126,6 +146,10 @@ def main():
 
     st.write("# Play Audio!")
     autoplay_audio("output.wav")
+
+    with st.expander("Generate Image"):
+        image_bytes = generate_text_to_image(scenario)
+        st.image(image_bytes, caption="Generated Image.")
 
 
 if __name__ == "__main__":

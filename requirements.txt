@@ -1,3 +1,5 @@
+accelerate
+diffusers
 python-dotenv
 transformers
 torch
