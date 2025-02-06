@@ -9,6 +9,7 @@ from langchain.prompts import PromptTemplate
 from langchain_openai import OpenAI
 from diffusers import DiffusionPipeline
 from diffusers.utils import export_to_video
+from huggingface_hub import InferenceClient
 
 
 def convert_img_text(url):
@@ -21,24 +22,17 @@ def convert_img_text(url):
 
 
 def generate_story(scenario):
-    template = """You are a story teller:
-    You can generate a short story based on a simple narritave, the story should be no more than 40 words:
-    
-    CONTEXT:{scenario}
-    STORY:
-    """
-    prompt = PromptTemplate(template=template, input_variables=["scenario"])
+    TOKEN = os.getenv("HUGGINGFACEHUB_API_TOKEN")
+    client = InferenceClient(token=TOKEN)
 
-    llm = OpenAI()
-
-    story_llm = LLMChain(
-        llm=llm,
-        prompt=prompt,
-        verbose=True,
+    completion = client.text_generation(
+        prompt=f"Write a short story based on this scenario: {scenario}",
+        model="tiiuae/falcon-7b-instruct",  # Modern and powerful instruction-tuned model
+        max_new_tokens=200,
+        temperature=0.7,
     )
 
-    story = story_llm.invoke(input=scenario)
-    return story["text"]
+    return completion
 
 
 def text_to_speech(text):
@@ -94,13 +88,18 @@ def generate_text_to_image(scenario):
 
     def query(payload):
         response = requests.post(API_URL, headers=headers, json=payload)
-        return response.content
+        if response.status_code == 200:
+            return response.content
+        st.write(f"Status code: {response.status_code}")
+        st.write(f"Response: {response.text}")
+        return None
 
     image_bytes = query(
         {
             "inputs": scenario,
         }
     )
+
     return image_bytes
 
 
@@ -149,7 +148,10 @@ def main():
 
     with st.expander("Generate Image"):
         image_bytes = generate_text_to_image(scenario)
-        st.image(image_bytes, caption="Generated Image.")
+        if image_bytes:
+            st.image(image_bytes, caption="Generated Image.")
+        else:
+            st.write("Image generation failed. Please try again.")
 
 
 if __name__ == "__main__":
